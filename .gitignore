@@ -1,0 +1,4 @@
+filtered_data/
+raw_data/
+*.csv
+*.txt
