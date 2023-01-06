@@ -1,6 +1,11 @@
 import pandas as pd
 import os
 
+question_cnt = 42
+input_bundled_row_cnt = 3
+input_interviewee_info_column_cnt = 5
+output_interviewee_info_column_cnt = 7
+
 def title_extraction(titles:list):
     questions = []
     for i in range(len(titles)):
@@ -10,28 +15,30 @@ def title_extraction(titles:list):
 
 def image_extraction(title:str):
     title = title.splitlines()
-    
     return title[8].split(" - ")[1]
 
 def data_processing(input_file:str, output_file:str):
     raw_list = pd.read_csv(input_file, header=0, index_col=0).values.tolist()
-    assert(len(raw_list) % 3 == 0)
-    processed_list = [[None]*49 for _ in range(int(len(raw_list)/3*6))]
-    questions = title_extraction(raw_list[0][1:43])
-    for i in range(int(len(raw_list)/3)):
-        for j in range(6):
-            processed_list[i*6+j][0] = raw_list[i*3+2][253]
-            processed_list[i*6+j][1] = raw_list[i*3+2][254]
-            processed_list[i*6+j][2] = raw_list[i*3+2][255]
-            processed_list[i*6+j][3] = raw_list[i*3+2][256]
-            processed_list[i*6+j][4] = raw_list[i*3+2][0]
-            processed_list[i*6+j][6] = 1 - j % 2
-            for k in range(7, 49):
-                processed_list[i*6+j][5] = image_extraction(raw_list[0][j*42+k-6])
-                processed_list[i*6+j][k] = raw_list[i*3+2][j*42+k-6]
-    title_list = raw_list[0][253:] + [raw_list[0][0], "Painting Name", "Eastern=1/Western=0"] + questions
+    assert(len(raw_list) % input_bundled_row_cnt == 0)
+    img_cnt = int((len(raw_list[0]) - input_interviewee_info_column_cnt) / question_cnt)
+    processed_list = [[None]*int(output_interviewee_info_column_cnt+question_cnt) for _ in range(int(len(raw_list)/input_bundled_row_cnt*img_cnt))]
+    questions = title_extraction(raw_list[0][1:1+question_cnt])
+    for i in range(int(len(raw_list)/input_bundled_row_cnt)):
+        for j in range(img_cnt):
+            processed_list[i*img_cnt+j][0] = raw_list[i*input_bundled_row_cnt+2][-4]
+            processed_list[i*img_cnt+j][1] = raw_list[i*input_bundled_row_cnt+2][-3]
+            processed_list[i*img_cnt+j][2] = raw_list[i*input_bundled_row_cnt+2][-2]
+            processed_list[i*img_cnt+j][3] = raw_list[i*input_bundled_row_cnt+2][-1]
+            processed_list[i*img_cnt+j][4] = raw_list[i*input_bundled_row_cnt+2][0]
+            processed_list[i*img_cnt+j][6] = 1 - j % 2
+            for k in range(7, 7+question_cnt):
+                processed_list[i*img_cnt+j][5] = image_extraction(raw_list[i*input_bundled_row_cnt][j*question_cnt+k-6])
+                processed_list[i*img_cnt+j][k] = raw_list[i*input_bundled_row_cnt+2][j*question_cnt+k-6]
+    title_list = raw_list[0][-4:] + [raw_list[0][0], "Painting Name", "Eastern=1/Western=0"] + questions
     processed_dataframe = pd.DataFrame(processed_list, columns =title_list)
     processed_dataframe.to_csv(output_file)
+
+
 
 if __name__ == "__main__":
     root = os.getcwd()
