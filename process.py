@@ -14,6 +14,8 @@ def title_extraction(titles:list):
     return questions
 
 def image_extraction(title:str):
+    if title == "Login ID":
+        return ""
     title = title.splitlines()
     return title[8].split(" - ")[1]
 
@@ -24,6 +26,7 @@ def data_processing(input_file:str, output_file:str):
     processed_list = [[None]*int(output_interviewee_info_column_cnt+question_cnt) for _ in range(int(len(raw_list)/input_bundled_row_cnt*img_cnt))]
     questions = title_extraction(raw_list[0][1:1+question_cnt])
     for i in range(int(len(raw_list)/input_bundled_row_cnt)):
+        img_title = ""
         for j in range(img_cnt):
             processed_list[i*img_cnt+j][0] = raw_list[i*input_bundled_row_cnt+2][-4]
             processed_list[i*img_cnt+j][1] = raw_list[i*input_bundled_row_cnt+2][-3]
@@ -32,8 +35,13 @@ def data_processing(input_file:str, output_file:str):
             processed_list[i*img_cnt+j][4] = raw_list[i*input_bundled_row_cnt+2][0]
             processed_list[i*img_cnt+j][6] = 1 - j % 2
             for k in range(7, 7+question_cnt):
-                processed_list[i*img_cnt+j][5] = image_extraction(raw_list[i*input_bundled_row_cnt][j*question_cnt+k-6])
+                img_title = image_extraction(raw_list[i*input_bundled_row_cnt][j*question_cnt+k-6])
+                if img_title == "":
+                    break
+                processed_list[i*img_cnt+j][5] = img_title
                 processed_list[i*img_cnt+j][k] = raw_list[i*input_bundled_row_cnt+2][j*question_cnt+k-6]
+            if img_title == "":
+                break
     title_list = raw_list[0][-4:] + [raw_list[0][0], "Painting Name", "Eastern=1/Western=0"] + questions
     processed_dataframe = pd.DataFrame(processed_list, columns =title_list)
     processed_dataframe.to_csv(output_file)
