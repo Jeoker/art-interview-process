@@ -1,3 +1,5 @@
+## This is a repo helping Kitty process her research dataset
+
 import pandas as pd
 import os
 
